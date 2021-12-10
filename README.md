@@ -1,12 +1,14 @@
 # Fedi DAO Contract
 
+DAO to govern Fediverse instance
+
+```bash
+
 # Deploy to new account on TestNet
 
 near deploy <contract-user> ./out/main.wasm
 
 # Initialize contract with given council and parameters (this is for testing, where you stil have access key to the contract).
-
-# For production use either a single command or the factory in ../sputnikdao-factory
 
 near call contract.letgobrendon.testnet new '{"vote_period": "1800000000000", "grace_period": "1800000000000"}' --accountId contract.letgobrendon.testnet
 
@@ -17,6 +19,32 @@ near call contract.letgobrendon.testnet join_dao --accountId bob.letgobrendon.te
 # List members
 
 near view contract.letgobrendon.testnet get_council
+
+# Create payout proposal
+near call contract.letgobrendon.testnet add_proposal '{"proposal": {"target": "bob.letgobrendon.testnet", "description": "payment for hosting", "kind": {"type": "Payout", "amount": "1000000000000000000000000"}}}' --accountId=bob.letgobrendon.testnet --amount 1
+
+# Get `limit=10` proposals from id=0
+near view contract.letgobrendon.testnet get_proposals '{"from_index": 0, "limit": 10}'
+
+
+# Vote for a proposal #0 `Yes` from `illia`
+near call contract.letgobrendon.testnet vote '{"id": 0, "vote": "Yes"}' --accountId bob.letgobrendon.testnet
+
+
+
+
+
+
+
+
+```
+
+
+
+
+
+
+
 
 A simple version of a DAO to give out tips, bounties and grants.
 Allows anyone to send a proposal to reward other people with funds and get a council to vote for it.
