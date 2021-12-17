@@ -1,23 +1,19 @@
-# Fedi DAO Contract
+# Fedi DAO Smart-Contract
 
 DAO to govern Fediverse instance
 
 ```bash
 
 # Deploy to new account on TestNet
-
 near deploy <contract-user> ./out/main.wasm
 
 # Initialize contract with given council and parameters (this is for testing, where you stil have access key to the contract).
-
 near call contract.letgobrendon.testnet new '{"vote_period": "1800000000000", "grace_period": "1800000000000"}' --accountId contract.letgobrendon.testnet
 
 # Join DAO
-
 near call contract.letgobrendon.testnet join_dao --accountId bob.letgobrendon.testnet
 
 # List members
-
 near view contract.letgobrendon.testnet get_council
 
 # Create payout proposal
@@ -25,7 +21,6 @@ near call contract.letgobrendon.testnet add_proposal '{"proposal": {"target": "b
 
 # Get `limit=10` proposals from id=0
 near view contract.letgobrendon.testnet get_proposals '{"from_index": 0, "limit": 10}'
-
 
 # Vote for a proposal #0 `Yes` from `illia`
 near call contract.letgobrendon.testnet vote '{"id": 0, "vote": "Yes"}' --accountId bob.letgobrendon.testnet

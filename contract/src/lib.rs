@@ -1,3 +1,8 @@
+
+use sodiumoxide::crypto::sign::ed25519::PublicKey;
+use sodiumoxide::crypto::sign;
+use serde::{Deserialize, Serialize};
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedSet, Vector};
 use near_sdk::json_types::{U128, U64};
@@ -151,7 +156,7 @@ pub struct ProposalInput {
 }
 
 #[near_bindgen]
-#[derive(BorshSerialize, BorshDeserialize)]
+#[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct FediDAO {
     // purpose: String,
     // bond: Balance,
@@ -160,6 +165,8 @@ pub struct FediDAO {
     policy: Vec<PolicyItem>,
     council: UnorderedSet<AccountId>,
     proposals: Vector<Proposal>,
+    public_key: PublicKey,
+    domain: String,
 }
 
 impl Default for FediDAO {
@@ -177,13 +184,16 @@ impl FediDAO {
         // bond: U128,
         vote_period: U64,
         grace_period: U64,
+        public_key: PublicKey,
+        domain: String,
     ) -> Self {
         assert!(!env::state_exists(), "The contract is already initialized");
 
-        // let dao = 
         Self {
             // purpose,
             // bond: bond.into(),
+            domain,
+            public_key,
             vote_period: vote_period.into(),
             grace_period: grace_period.into(),
             policy: vec![PolicyItem {
@@ -200,8 +210,20 @@ impl FediDAO {
         // dao
     }
 
-    pub fn join_dao(&mut self) -> u64 {
-        self.council.insert(&env::predecessor_account_id());
+    pub fn join_dao(&mut self, dao_ticket: String) -> u64 {
+
+        // let public_key : [u8; 32] = [59,115,32,158,152,90,234,38,51,137,129,14,226,206,228,8,81,73,245,166,209,149,127,185,72,63,87,181,137,174,206,234];
+        let mut signed_data = vec![1];
+        signed_data  = serde_json::from_str(&dao_ticket).unwrap();
+        let verified_data = sign::verify(&signed_data[..], &self.public_key).unwrap();
+        let ticket = String::from_utf8_lossy(&verified_data);
+        let mut ticket_splitted = ticket.split(" ");
+        let domain = ticket_splitted.next().unwrap();
+        let username = ticket_splitted.next().unwrap();
+
+        if &domain == &self.domain {
+            self.council.insert(&env::predecessor_account_id());
+        }
         1
     }
 
