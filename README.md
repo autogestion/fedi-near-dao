@@ -8,10 +8,10 @@ DAO to govern Fediverse instance
 near deploy <contract-user> ./out/main.wasm
 
 # Initialize contract with given council and parameters (this is for testing, where you stil have access key to the contract).
-near call contract.letgobrendon.testnet new '{"vote_period": "1800000000000", "grace_period": "1800000000000"}' --accountId contract.letgobrendon.testnet
+near call contract.letgobrendon.testnet new '{"vote_period": "1800000000000", "grace_period": "1800000000000", "domain": "dupa.com", "public_key": "03c98962bc9f8d3e5ea0cd15cfef96f7623d28ef84986bb9c898be11748eb61f80"}' --accountId contract.letgobrendon.testnet
 
 # Join DAO
-near call contract.letgobrendon.testnet join_dao --accountId bob.letgobrendon.testnet
+near call contract.letgobrendon.testnet join_dao '{"dao_ticket": "3045022100a20188c423d752a5f6617133b841e0cc90a4007e9c9d31e4c19f07670e670155022063dea1e5cf6d5ce8506dcaf97bae47d5e4db6ee362fd3142b3389e3cc310959c", "username": "string2"}' --accountId bob.letgobrendon.testnet
 
 # List members
 near view contract.letgobrendon.testnet get_council
@@ -24,9 +24,6 @@ near view contract.letgobrendon.testnet get_proposals '{"from_index": 0, "limit"
 
 # Vote for a proposal #0 `Yes` from `illia`
 near call contract.letgobrendon.testnet vote '{"id": 0, "vote": "Yes"}' --accountId bob.letgobrendon.testnet
-
-
-
 
 
 

@@ -1,7 +1,7 @@
+use std::str::FromStr;
 
-use sodiumoxide::crypto::sign::ed25519::PublicKey;
-use sodiumoxide::crypto::sign;
-use serde::{Deserialize, Serialize};
+use secp256k1::bitcoin_hashes::sha256;
+use secp256k1::{Message, Secp256k1, PublicKey, Signature};
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedSet, Vector};
@@ -156,7 +156,7 @@ pub struct ProposalInput {
 }
 
 #[near_bindgen]
-#[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct FediDAO {
     // purpose: String,
     // bond: Balance,
@@ -165,7 +165,7 @@ pub struct FediDAO {
     policy: Vec<PolicyItem>,
     council: UnorderedSet<AccountId>,
     proposals: Vector<Proposal>,
-    public_key: PublicKey,
+    public_key: String,
     domain: String,
 }
 
@@ -184,7 +184,7 @@ impl FediDAO {
         // bond: U128,
         vote_period: U64,
         grace_period: U64,
-        public_key: PublicKey,
+        public_key: String,
         domain: String,
     ) -> Self {
         assert!(!env::state_exists(), "The contract is already initialized");
@@ -210,20 +210,14 @@ impl FediDAO {
         // dao
     }
 
-    pub fn join_dao(&mut self, dao_ticket: String) -> u64 {
+    pub fn join_dao(&mut self, dao_ticket: String, username: String) -> u64 {
 
-        // let public_key : [u8; 32] = [59,115,32,158,152,90,234,38,51,137,129,14,226,206,228,8,81,73,245,166,209,149,127,185,72,63,87,181,137,174,206,234];
-        let mut signed_data = vec![1];
-        signed_data  = serde_json::from_str(&dao_ticket).unwrap();
-        let verified_data = sign::verify(&signed_data[..], &self.public_key).unwrap();
-        let ticket = String::from_utf8_lossy(&verified_data);
-        let mut ticket_splitted = ticket.split(" ");
-        let domain = ticket_splitted.next().unwrap();
-        let username = ticket_splitted.next().unwrap();
-
-        if &domain == &self.domain {
-            self.council.insert(&env::predecessor_account_id());
-        }
+        let secp = Secp256k1::verification_only();
+        let sig = Signature::from_str(&dao_ticket).unwrap();
+        let public_key = PublicKey::from_str(&self.public_key).unwrap();
+        let message = Message::from_hashed_data::<sha256::Hash>(&username.as_bytes());
+        assert!(secp.verify(&message, &sig, &public_key).is_ok());
+        self.council.insert(&env::predecessor_account_id());
         1
     }
 
