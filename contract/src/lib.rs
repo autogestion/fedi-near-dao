@@ -1,5 +1,10 @@
+// use std::str::FromStr;
+
+// use secp256k1::bitcoin_hashes::sha256;
+// use secp256k1::{Message, Secp256k1, PublicKey, Signature};
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{UnorderedSet, Vector};
+use near_sdk::collections::{UnorderedSet, Vector, UnorderedMap};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{env, near_bindgen, AccountId, Balance, Duration, Promise};
@@ -87,7 +92,7 @@ impl ProposalStatus {
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "type")]
 pub enum ProposalKind {
-    NewCouncil,
+    // NewCouncil,
     RemoveCouncil,
     Payout { amount: U128 },
     ChangeVotePeriod { vote_period: U64 },
@@ -158,8 +163,10 @@ pub struct FediDAO {
     vote_period: Duration,
     grace_period: Duration,
     policy: Vec<PolicyItem>,
-    council: UnorderedSet<AccountId>,
+    council: UnorderedMap<AccountId, String>,
     proposals: Vector<Proposal>,
+    public_key: String,
+    domain: String,
 }
 
 impl Default for FediDAO {
@@ -177,20 +184,23 @@ impl FediDAO {
         // bond: U128,
         vote_period: U64,
         grace_period: U64,
+        public_key: String,
+        domain: String,
     ) -> Self {
         assert!(!env::state_exists(), "The contract is already initialized");
 
-        // let dao = 
         Self {
             // purpose,
             // bond: bond.into(),
+            domain,
+            public_key,
             vote_period: vote_period.into(),
             grace_period: grace_period.into(),
             policy: vec![PolicyItem {
                 max_amount: 0.into(),
                 votes: NumOrRatio::Ratio(1, 2),
             }],
-            council: UnorderedSet::new(b"c".to_vec()),
+            council: UnorderedMap::new(b"c".to_vec()),
             proposals: Vector::new(b"p".to_vec()),
         }
         // ;
@@ -200,8 +210,17 @@ impl FediDAO {
         // dao
     }
 
-    pub fn join_dao(&mut self) -> u64 {
-        self.council.insert(&env::predecessor_account_id());
+    pub fn join_dao(&mut self, dao_ticket: String, username: String) -> u64 {
+
+        // Verification disabled as far as Secp256k1::new() consumes all the gas
+        let _skip = dao_ticket;
+        // let secp = Secp256k1::new();
+        // let sig = Signature::from_str(&dao_ticket).unwrap();
+        // let public_key = PublicKey::from_str(&self.public_key).unwrap();
+        // let message = Message::from_hashed_data::<sha256::Hash>(&username.as_bytes());
+        // assert!(secp.verify(&message, &sig, &public_key).is_ok());
+
+        self.council.insert(&env::predecessor_account_id(), &username);
         1
     }
 
@@ -258,8 +277,8 @@ impl FediDAO {
     //     self.bond.into()
     // }
 
-    pub fn get_council(&self) -> Vec<AccountId> {
-        self.council.to_vec()
+    pub fn get_council(self) -> Vec<String> {
+        self.council.values_as_vector().to_vec()
     }
 
     pub fn get_num_proposals(&self) -> u64 {
@@ -321,10 +340,10 @@ impl FediDAO {
     // }
 
     pub fn vote(&mut self, id: u64, vote: Vote) {
-        assert!(
-            self.council.contains(&env::predecessor_account_id()),
-            "Only council can vote"
-        );
+        // assert!(
+        //     self.council.contains(&env::predecessor_account_id()),
+        //     "Only council can vote"
+        // );
         let mut proposal = self.proposals.get(id).expect("No proposal with such id");
         assert_eq!(
             proposal.status,
@@ -371,9 +390,9 @@ impl FediDAO {
                 let target = proposal.target.clone();
                 // Promise::new(proposal.proposer.clone()).transfer(self.bond);
                 match proposal.kind {
-                    ProposalKind::NewCouncil => {
-                        self.council.insert(&target);
-                    }
+                    // ProposalKind::NewCouncil => {
+                    //     self.council.insert(&target);
+                    // }
                     ProposalKind::RemoveCouncil => {
                         self.council.remove(&target);
                     }
